@@ -34,6 +34,7 @@ type Chip8 interface {
 	DumpMemory()
 	Cycle()
 	DrawFlag() bool
+	updateTimers()
 }
 
 type chip8 struct {
@@ -95,15 +96,41 @@ func (c *chip8) fetchOpcode() uint16 {
 
 func (c *chip8) Cycle() {
 	opcode := c.fetchOpcode()
-	if opcode == 0xA2F0 {
-		c.index = opcode & 0x0FFF
-		c.pc += 2
-	} else {
-		fmt.Println("NOT HANDLED OPCODE: ", strconv.FormatInt(int64(opcode), 16))
-		c.pc += 2
+	switch opcode & 0xF000 {
+	case 0x0000:
+		switch opcode & 0x00F {
+		case 0x0000:
+			fmt.Println("CLEAR")
+			break
+		case 0x000E:
+			fmt.Println("Return from subroutine")
+			break
+		default:
+			fmt.Println("Unknown opcode [0x0000]: 0x", strconv.FormatInt(int64(opcode), 16))
+		}
+		break
+	default:
+		// fmt.Println("NOT HANDLED OPCODE: ", strconv.FormatInt(int64(opcode), 16))
 	}
+
+	c.pc += 2
+	c.updateTimers()
 }
 
 func (c *chip8) DrawFlag() bool {
 	return false
+}
+
+func (c *chip8) updateTimers() {
+	if c.delayTimer > 0 {
+		c.delayTimer = c.delayTimer - 1
+	}
+
+	if c.soundTimer > 0 {
+		c.soundTimer = c.soundTimer - 1
+		if c.soundTimer == 1 {
+			fmt.Println("BEEP")
+
+		}
+	}
 }

@@ -4,7 +4,6 @@ import (
 	"brunocroh/chip8/chip8"
 	"brunocroh/chip8/utils"
 	"fmt"
-	"time"
 )
 
 func main() {
@@ -25,7 +24,7 @@ func main() {
 
 	for {
 		chip8.Cycle()
-		time.Sleep(5 * time.Second)
+		// time.Sleep(0.005 * time.Second)
 	}
 
 }

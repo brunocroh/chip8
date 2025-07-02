@@ -2,13 +2,38 @@ package chip8
 
 import (
 	"fmt"
+	"strconv"
 )
 
 const START_ADDRESS = 0x200
+const FONTSET_START_ADDRESS = 0x50
+const FONTSET_SIZE = 80
+
+var fontset = [FONTSET_SIZE]byte{
+	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+	0x20, 0x60, 0x20, 0x20, 0x70, // 1
+	0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+	0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+	0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+	0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+	0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+	0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+	0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+	0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+	0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+	0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+	0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+	0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+	0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+	0xF0, 0x80, 0xF0, 0x80, 0x80, // F
+}
 
 type Chip8 interface {
 	LoadRom(rom []byte)
+	Init()
 	DumpMemory()
+	Cycle()
+	DrawFlag() bool
 }
 
 type chip8 struct {
@@ -41,6 +66,17 @@ func NewChip8() Chip8 {
 	}
 }
 
+func (c *chip8) Init() {
+	c.pc = START_ADDRESS
+	c.memory[c.pc] = 0xA2
+	c.memory[c.pc+1] = 0xF0
+
+	for i, v := range fontset {
+		c.memory[FONTSET_START_ADDRESS+i] = v
+	}
+
+}
+
 func (c *chip8) LoadRom(rom []byte) {
 	for i, v := range rom {
 		c.memory[START_ADDRESS+i] = v
@@ -50,5 +86,24 @@ func (c *chip8) LoadRom(rom []byte) {
 }
 
 func (c *chip8) DumpMemory() {
-	fmt.Println(c.memory)
+	fmt.Printf("% x\n", c.memory)
+}
+
+func (c *chip8) fetchOpcode() uint16 {
+	return uint16(c.memory[c.pc])<<8 | uint16(c.memory[c.pc+1])
+}
+
+func (c *chip8) Cycle() {
+	opcode := c.fetchOpcode()
+	if opcode == 0xA2F0 {
+		c.index = opcode & 0x0FFF
+		c.pc += 2
+	} else {
+		fmt.Println("NOT HANDLED OPCODE: ", strconv.FormatInt(int64(opcode), 16))
+		c.pc += 2
+	}
+}
+
+func (c *chip8) DrawFlag() bool {
+	return false
 }

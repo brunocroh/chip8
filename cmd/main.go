@@ -4,6 +4,7 @@ import (
 	"brunocroh/chip8/chip8"
 	"brunocroh/chip8/utils"
 	"fmt"
+	"time"
 )
 
 func main() {
@@ -18,7 +19,13 @@ func main() {
 
 	chip8 := chip8.NewChip8()
 
+	chip8.Init()
 	chip8.LoadRom(rom)
 	chip8.DumpMemory()
+
+	for {
+		chip8.Cycle()
+		time.Sleep(5 * time.Second)
+	}
 
 }

@@ -31,6 +31,7 @@ var fontset = [FONTSET_SIZE]byte{
 type Chip8 interface {
 	LoadRom(rom []byte)
 	Init()
+	Quit()
 	DumpMemory()
 	Cycle()
 	DrawFlag() bool
@@ -69,8 +70,6 @@ func NewChip8() Chip8 {
 
 func (c *chip8) Init() {
 	c.pc = START_ADDRESS
-	c.memory[c.pc] = 0xA2
-	c.memory[c.pc+1] = 0xF0
 
 	for i, v := range fontset {
 		c.memory[FONTSET_START_ADDRESS+i] = v
@@ -96,7 +95,43 @@ func (c *chip8) fetchOpcode() uint16 {
 
 func (c *chip8) Cycle() {
 	opcode := c.fetchOpcode()
+	// fmt.Printf("opcode: hex: 0x%s bin: %s \n", strconv.FormatInt(int64(opcode), 16), strconv.FormatInt(int64(opcode), 2))
+	// fmt.Printf("opcod3: hex: 0x%s bin: %s \n", strconv.FormatInt(int64(opcode&0x00F), 16), strconv.FormatInt(int64(opcode), 2))
+	// fmt.Printf("opcod4: hex: 0x%s bin: %s \n", strconv.FormatInt(int64(opcode&0x00F), 16), strconv.FormatInt(int64(opcode), 2))
 	switch opcode & 0xF000 {
+	case 0xA000:
+		c.index = opcode & 0x0FFF
+		break
+	case 0x1000:
+		c.pc = opcode & 0x0FFF
+		break
+	case 0x6000:
+		c.register[uint8(opcode&0x0F00>>8)] = uint8(opcode & 0x00FF)
+		break
+	case 0x7000:
+		c.register[uint8(opcode&0x0F00>>8)] += uint8(opcode>>8) & 0x00FF
+		c.pc += 2
+		fmt.Println("register: ", opcode&0x0F00)
+		break
+	case 0xD000:
+		x := c.register[uint8(opcode&0x0F00>>8)]
+		y := c.register[uint8(opcode&0x00F0>>4)]
+		height := uint8(opcode & 0x000F >> 8)
+		var pixel uint8
+		var yline uint8
+
+		c.register[0xF] = 0
+		for yline = 0; yline < height; yline++ {
+			pixel = c.memory[c.index+uint16(yline)]
+			for xline := uint8(0); xline < 8; xline++ {
+				if (pixel & (0x80 >> xline)) != 0 {
+					c.register[0xF] = 1
+				}
+				c.video[x+xline+((y+yline)*64)] ^= 1
+			}
+		}
+		c.index = opcode & 0x0FFF
+		break
 	case 0x0000:
 		switch opcode & 0x00F {
 		case 0x0000:
@@ -109,16 +144,33 @@ func (c *chip8) Cycle() {
 			fmt.Println("Unknown opcode [0x0000]: 0x", strconv.FormatInt(int64(opcode), 16))
 		}
 		break
+	case 0xE000:
+		switch opcode & 0x00FF {
+		case 0x009E:
+			fmt.Println("E-9e")
+			break
+		case 0x00A1:
+			fmt.Println("E-A1")
+			break
+		default:
+			fmt.Println("E opcode not found")
+		}
+		break
+	case 0xF000:
+		fmt.Println("F")
+		break
 	default:
-		// fmt.Println("NOT HANDLED OPCODE: ", strconv.FormatInt(int64(opcode), 16))
+		fmt.Println("NOT HANDLED OPCODE: ", strconv.FormatInt(int64(opcode), 16))
 	}
-
-	c.pc += 2
 	c.updateTimers()
 }
 
 func (c *chip8) DrawFlag() bool {
 	return false
+}
+
+func (c *chip8) Quit() {
+	fmt.Println("Chip-8 Quit")
 }
 
 func (c *chip8) updateTimers() {

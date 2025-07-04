@@ -6,7 +6,7 @@ import (
 )
 
 func LoadRom() ([]byte, error) {
-	data, err := os.ReadFile("./roms/test_opcode.ch8")
+	data, err := os.ReadFile("./roms/IBM_LOGO.ch8")
 
 	if err != nil {
 		fmt.Println("Fail to read the rom", err)

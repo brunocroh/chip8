@@ -34,7 +34,7 @@ type Chip8 interface {
 	Quit()
 	DumpMemory()
 	Cycle()
-	DrawFlag() bool
+	Clear()
 	updateTimers()
 }
 
@@ -48,11 +48,12 @@ type chip8 struct {
 	delayTimer uint8        // Delay timer
 	soundTimer uint8        // Delay timer
 	keypad     [16]uint8    // Keypad state
-	video      [2048]uint32 // Display buffer
+	Video      [2048]uint32 // Display buffer
 	opcode     uint16       //Current opcode
+	DrawFlag   bool         //Draw flag
 }
 
-func NewChip8() Chip8 {
+func NewChip8() *chip8 {
 	return &chip8{
 		register:   [16]uint8{},
 		memory:     [4096]uint8{},
@@ -63,8 +64,9 @@ func NewChip8() Chip8 {
 		delayTimer: 0,
 		soundTimer: 0,
 		keypad:     [16]uint8{},
-		video:      [2048]uint32{}, //64*32
+		Video:      [2048]uint32{}, //64*32
 		opcode:     0,
+		DrawFlag:   false,
 	}
 }
 
@@ -75,6 +77,7 @@ func (c *chip8) Init() {
 		c.memory[FONTSET_START_ADDRESS+i] = v
 	}
 
+	c.Clear()
 }
 
 func (c *chip8) LoadRom(rom []byte) {
@@ -93,54 +96,72 @@ func (c *chip8) fetchOpcode() uint16 {
 	return uint16(c.memory[c.pc])<<8 | uint16(c.memory[c.pc+1])
 }
 
+func (c *chip8) Clear() {
+	for i := range c.Video {
+		c.Video[i] = 0
+	}
+	c.DrawFlag = true
+}
+
 func (c *chip8) Cycle() {
 	opcode := c.fetchOpcode()
-	// fmt.Printf("opcode: hex: 0x%s bin: %s \n", strconv.FormatInt(int64(opcode), 16), strconv.FormatInt(int64(opcode), 2))
-	// fmt.Printf("opcod3: hex: 0x%s bin: %s \n", strconv.FormatInt(int64(opcode&0x00F), 16), strconv.FormatInt(int64(opcode), 2))
-	// fmt.Printf("opcod4: hex: 0x%s bin: %s \n", strconv.FormatInt(int64(opcode&0x00F), 16), strconv.FormatInt(int64(opcode), 2))
+	fmt.Printf("opcode: hex: 0x%s bin: %s \n", strconv.FormatInt(int64(opcode), 16), strconv.FormatInt(int64(opcode), 2))
 	switch opcode & 0xF000 {
 	case 0xA000:
 		c.index = opcode & 0x0FFF
+		c.pc += 2
 		break
 	case 0x1000:
 		c.pc = opcode & 0x0FFF
 		break
 	case 0x6000:
 		c.register[uint8(opcode&0x0F00>>8)] = uint8(opcode & 0x00FF)
+		c.pc += 2
 		break
 	case 0x7000:
-		c.register[uint8(opcode&0x0F00>>8)] += uint8(opcode>>8) & 0x00FF
+		c.register[uint8(opcode&0x0F00>>8)] += uint8(opcode & 0x0FF)
 		c.pc += 2
-		fmt.Println("register: ", opcode&0x0F00)
 		break
+	// Dxyn
 	case 0xD000:
-		x := c.register[uint8(opcode&0x0F00>>8)]
-		y := c.register[uint8(opcode&0x00F0>>4)]
-		height := uint8(opcode & 0x000F >> 8)
-		var pixel uint8
-		var yline uint8
+		x := uint16(c.register[(opcode&0x0F00)>>8])
+		y := uint16(c.register[(opcode&0x00F0)>>4])
+		n := opcode & 0x000F
 
 		c.register[0xF] = 0
-		for yline = 0; yline < height; yline++ {
-			pixel = c.memory[c.index+uint16(yline)]
-			for xline := uint8(0); xline < 8; xline++ {
-				if (pixel & (0x80 >> xline)) != 0 {
-					c.register[0xF] = 1
+
+		for yLine := uint16(0); yLine < n; yLine++ {
+			pixel := c.memory[c.index+yLine]
+			for xLine := uint16(0); xLine < 8; xLine++ {
+				if (pixel & (0x80 >> xLine)) != 0 {
+					xPos := (x + xLine) % 64
+					yPos := (y + yLine) % 32
+					screenPos := xPos + (yPos * 64)
+					if c.Video[screenPos] == 1 {
+						c.register[0xF] = 1
+					}
+
+					c.Video[screenPos] ^= 1
 				}
-				c.video[x+xline+((y+yline)*64)] ^= 1
+
 			}
+
 		}
 		c.index = opcode & 0x0FFF
+		c.DrawFlag = true
+		c.pc += 2
 		break
 	case 0x0000:
 		switch opcode & 0x00F {
 		case 0x0000:
-			fmt.Println("CLEAR")
+			c.Clear()
+			c.pc += 2
 			break
 		case 0x000E:
 			fmt.Println("Return from subroutine")
 			break
 		default:
+			// c.pc += 2
 			fmt.Println("Unknown opcode [0x0000]: 0x", strconv.FormatInt(int64(opcode), 16))
 		}
 		break
@@ -163,10 +184,6 @@ func (c *chip8) Cycle() {
 		fmt.Println("NOT HANDLED OPCODE: ", strconv.FormatInt(int64(opcode), 16))
 	}
 	c.updateTimers()
-}
-
-func (c *chip8) DrawFlag() bool {
-	return false
 }
 
 func (c *chip8) Quit() {

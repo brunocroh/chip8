@@ -40,6 +40,7 @@ type Chip8 interface {
 	Cycle()
 	Clear()
 	updateTimers()
+	incrementCounter()
 }
 
 type chip8 struct {
@@ -100,6 +101,10 @@ func (c *chip8) fetchOpcode() uint16 {
 	return uint16(c.memory[c.pc])<<8 | uint16(c.memory[c.pc+1])
 }
 
+func (c *chip8) incrementCounter() {
+	c.pc += 2
+}
+
 func (c *chip8) Clear() {
 	for i := range c.Video {
 		c.Video[i] = 0
@@ -122,6 +127,7 @@ func (c *chip8) Cycle() {
 	x := (opcode & 0x0F00) >> 8
 	y := (opcode & 0x00F0) >> 4
 	n := opcode & 0x000F
+	c.incrementCounter()
 
 	switch opcode & 0xF000 {
 	case 0x0000:
@@ -129,7 +135,6 @@ func (c *chip8) Cycle() {
 		// 00E0 - CLS
 		case 0x0000:
 			c.Clear()
-			c.pc += 2
 			break
 		// 00EE - RET
 		case 0x000E:
@@ -147,69 +152,56 @@ func (c *chip8) Cycle() {
 	// 2nnn - CALL addr
 	case 0x2000:
 		c.sp += 1
-		c.stack[c.sp] = c.pc + 2
+		c.stack[c.sp] = c.pc
 		c.pc = nnn
 		break
 	// 3xkk - SE Vx, byte
 	case 0x3000:
 		if c.register[x] == kk {
-			c.pc += 4
-		} else {
 			c.pc += 2
 		}
 		break
 	// 4xkk - SNE Vx, byte
 	case 0x4000:
 		if c.register[x] != kk {
-			c.pc += 4
-		} else {
 			c.pc += 2
 		}
 		break
 	// 5xy0 - SE Vx, Vy
 	case 0x5000:
 		if c.register[x] == c.register[y] {
-			c.pc += 4
-		} else {
 			c.pc += 2
 		}
 		break
 	// 6xkk - LD Vx, byte
 	case 0x6000:
 		c.register[x] = kk
-		c.pc += 2
 		break
 	case 0x7000:
 		c.register[x] += kk
-		c.pc += 2
 		break
 	case 0x8000:
 		switch n {
 		// 8xy0 - LD Vx, Vy
 		case 0:
 			c.register[x] = c.register[y]
-			c.pc += 2
 			break
 		// 8xy1 - OR Vx, Vy
 		case 1:
 			c.register[x] = c.register[x] | c.register[y]
-			c.pc += 2
 			break
 		// 8xy2 - AND Vx, Vy
 		case 2:
 			c.register[x] = c.register[x] & c.register[y]
-			c.pc += 2
 			break
 		// 8xy3 - XOR Vx, Vy
 		case 3:
 			c.register[x] = c.register[x] ^ c.register[y]
-			c.pc += 2
 			break
 		// 8xy4 - ADD Vx, Vy
 		case 4:
 			c.register[x] += c.register[y]
 			c.register[0xF] = 1
-			c.pc += 2
 			break
 		// 8xy5 - SUB Vx, Vy
 		case 5:
@@ -219,7 +211,6 @@ func (c *chip8) Cycle() {
 				c.register[0xF] = 0
 			}
 			c.register[x] -= c.register[y]
-			c.pc += 2
 			break
 		// 8xy6 - SHR Vx {, Vy}
 		case 6:
@@ -232,7 +223,6 @@ func (c *chip8) Cycle() {
 			}
 
 			c.register[x] >>= 1
-			c.pc += 2
 			break
 		// 8xy7 - SUBN Vx, Vy
 		case 7:
@@ -243,7 +233,6 @@ func (c *chip8) Cycle() {
 			}
 
 			c.register[x] = c.register[y] - c.register[x]
-			c.pc += 2
 			break
 		// 8xyE - SHL, VX {, Vy}
 		case 0xE:
@@ -256,21 +245,16 @@ func (c *chip8) Cycle() {
 			}
 
 			c.register[x] *= 2
-			c.pc += 2
-
 			break
 		}
 	case 0x9000:
 		if c.register[x] != c.register[y] {
-			c.pc += 4
-		} else {
 			c.pc += 2
 		}
 		break
 	// // Annn
 	case 0xA000:
 		c.index = nnn
-		c.pc += 2
 		break
 	// Bnnn
 	case 0xB000:
@@ -279,7 +263,6 @@ func (c *chip8) Cycle() {
 	case 0xC000:
 		random := rand.Intn(255)
 		c.register[x] = uint8(random) & kk
-		c.pc += 2
 		break
 	// Dxyn
 	case 0xD000:
@@ -305,7 +288,6 @@ func (c *chip8) Cycle() {
 		}
 		c.index = nnn
 		c.DrawFlag = true
-		c.pc += 2
 		break
 	case 0xE000:
 		switch opcode & 0x00FF {
@@ -316,7 +298,6 @@ func (c *chip8) Cycle() {
 			fmt.Println("E-A1")
 			break
 		default:
-			c.pc += 2
 			fmt.Println("E opcode not found")
 		}
 		break
@@ -326,30 +307,25 @@ func (c *chip8) Cycle() {
 			for i := uint16(0); i <= x; i++ {
 				c.memory[c.index+i] = c.register[i]
 			}
-			fmt.Println("end 55")
 			c.index += x + 1
-			c.pc += 2
 			break
 		case 0x0015:
-			c.pc += 2
+			c.delayTimer = c.register[x]
 			break
 		case 0x001E:
 			c.index = c.index + uint16(c.register[x])
-			c.pc += 2
 			break
 		case 0x0033:
 			number := c.register[x]
 			c.memory[c.index] = number / 100
-			c.memory[c.index] = (number / 100) % 10
+			c.memory[c.index+1] = (number % 100) / 10
 			c.memory[c.index+2] = (number % 100) % 10
-			c.pc += 2
 			break
 		case 0x0065:
 			for i := uint16(0); i <= x; i++ {
 				c.register[i] = c.memory[c.index+i]
 			}
 			c.index += x + 1
-			c.pc += 2
 			break
 		default:
 			fmt.Println("F NOT HANDLED OPCODE: ", strconv.FormatInt(int64(opcode), 16))

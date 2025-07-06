@@ -63,7 +63,6 @@ func main() {
 			case *sdl.QuitEvent:
 				println("Quit")
 				keepRunning = false
-				break
 			}
 		}
 

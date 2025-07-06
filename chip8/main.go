@@ -309,6 +309,9 @@ func (c *chip8) Cycle() {
 			}
 			c.index += x + 1
 			break
+		case 0x0007:
+			c.register[x] = c.delayTimer
+			break
 		case 0x0015:
 			c.delayTimer = c.register[x]
 			break

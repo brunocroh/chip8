@@ -2,6 +2,7 @@ package chip8
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 )
 
@@ -105,29 +106,175 @@ func (c *chip8) Clear() {
 
 func (c *chip8) Cycle() {
 	opcode := c.fetchOpcode()
-	fmt.Printf("opcode: hex: 0x%s bin: %s \n", strconv.FormatInt(int64(opcode), 16), strconv.FormatInt(int64(opcode), 2))
+	nnn := opcode & 0x0FFF
+	kk := uint8(opcode & 0x00FF)
+	x := (opcode & 0x0F00) >> 8
+	y := (opcode & 0x00F0) >> 4
+	n := opcode & 0x000F
+
+	fmt.Printf("opcode: 0x%s \nnnn: 0x%s  \nx: 0x%s\ny: 0x%s\nn: 0x%s\nkk: 0x%s\n====\n", strconv.FormatInt(int64(opcode), 16), strconv.FormatInt(int64(nnn), 16), strconv.FormatInt(int64(x), 16), strconv.FormatInt(int64(y), 16), strconv.FormatInt(int64(n), 16), strconv.FormatInt(int64(kk), 16))
+
 	switch opcode & 0xF000 {
-	case 0xA000:
-		c.index = opcode & 0x0FFF
+	case 0x0000:
+		switch opcode & 0x00F {
+		// 00E0 - CLS
+		case 0x0000:
+			c.Clear()
+			c.pc += 2
+			break
+		// 00EE - RET
+		case 0x000E:
+			c.pc = c.stack[c.sp]
+			c.sp -= 1
+			break
+		// 00EE - RET
+		default:
+			fmt.Println("Unknown opcode [0x0000]: 0x", strconv.FormatInt(int64(opcode), 16))
+		}
+		break
+	// 1nnn - JP addr
+	case 0x1000:
+		c.pc = nnn
+		break
+	// 2nnn - CALL addr
+	case 0x2000:
+		c.sp += 1
+		c.stack[c.sp] = c.pc
+		c.pc = nnn
+		break
+	// 3xkk - SE Vx, byte
+	case 0x3000:
+		if c.register[x] == kk {
+			c.pc += 2
+		}
 		c.pc += 2
 		break
-	case 0x1000:
-		c.pc = opcode & 0x0FFF
+	// 4xkk - SNE Vx, byte
+	case 0x4000:
+		if c.register[x] != kk {
+			c.pc += 2
+		}
+		c.pc += 2
 		break
+	// 5xy0 - SE Vx, Vy
+	case 0x5000:
+		if c.register[x] == c.register[y] {
+			c.pc += 2
+		}
+		c.pc += 2
+		break
+	// 6xkk - LD Vx, byte
 	case 0x6000:
-		c.register[uint8(opcode&0x0F00>>8)] = uint8(opcode & 0x00FF)
+		kk := uint8(opcode & 0x00FF)
+		c.register[x] = uint8(kk)
 		c.pc += 2
 		break
 	case 0x7000:
-		c.register[uint8(opcode&0x0F00>>8)] += uint8(opcode & 0x0FF)
+		c.register[x] += kk
+		c.pc += 2
+		break
+	case 0x8000:
+		switch n {
+		// 8xy0 - LD Vx, Vy
+		case 0:
+			c.register[x] = c.register[y]
+			c.pc += 2
+			break
+		// 8xy1 - OR Vx, Vy
+		case 1:
+			c.register[x] = c.register[x] | c.register[y]
+			c.pc += 2
+			break
+		// 8xy2 - AND Vx, Vy
+		case 2:
+			c.register[x] = c.register[x] & c.register[y]
+			c.pc += 2
+			break
+		// 8xy3 - XOR Vx, Vy
+		case 3:
+			c.register[x] = c.register[x] ^ c.register[y]
+			c.pc += 2
+			break
+		// 8xy4 - ADD Vx, Vy
+		case 4:
+			c.register[x] += c.register[y]
+			c.register[0xF] = 1
+			c.pc += 2
+			break
+		// 8xy5 - SUB Vx, Vy
+		case 5:
+			if c.register[x] > c.register[y] {
+				c.register[0xF] = 1
+			} else {
+				c.register[0xF] = 0
+			}
+			c.register[x] -= c.register[y]
+			c.pc += 2
+			break
+		// 8xy6 - SHR Vx {, Vy}
+		case 6:
+			bit := c.register[x]
+
+			if bit&0x01 == 1 {
+				c.register[0xF] = 1
+			} else {
+				c.register[0xF] = 0
+			}
+
+			c.register[x] >>= 1
+			c.pc += 2
+			break
+		// 8xy7 - SUBN Vx, Vy
+		case 7:
+			if c.register[y] > c.register[x] {
+				c.register[0xF] = 1
+			} else {
+				c.register[0xF] = 0
+			}
+
+			c.register[x] = c.register[y] - c.register[x]
+			c.pc += 2
+			break
+		// 8xyE - SHL, VX {, Vy}
+		case 0xE:
+			bit := c.register[x]
+
+			if bit&0x01 == 1 {
+				c.register[0xF] = 1
+			} else {
+				c.register[0xF] = 0
+			}
+
+			c.register[x] *= 2
+			c.pc += 2
+
+			break
+		}
+	case 0x9000:
+		if c.register[x] != c.register[y] {
+			c.pc += 2
+		}
+
+		c.pc += 2
+		break
+	case 0xA000:
+		c.index = nnn
+		c.pc += 2
+		break
+	case 0xB000:
+		c.pc = nnn + uint16(c.register[0])
+		break
+	case 0xC000:
+		random := rand.Intn(255)
+		c.register[x] = uint8(random) & kk
+
 		c.pc += 2
 		break
 	// Dxyn
 	case 0xD000:
-		x := uint16(c.register[(opcode&0x0F00)>>8])
-		y := uint16(c.register[(opcode&0x00F0)>>4])
+		x := uint16(c.register[x])
+		y := uint16(c.register[y])
 		n := opcode & 0x000F
-
 		c.register[0xF] = 0
 
 		for yLine := uint16(0); yLine < n; yLine++ {
@@ -150,20 +297,6 @@ func (c *chip8) Cycle() {
 		c.index = opcode & 0x0FFF
 		c.DrawFlag = true
 		c.pc += 2
-		break
-	case 0x0000:
-		switch opcode & 0x00F {
-		case 0x0000:
-			c.Clear()
-			c.pc += 2
-			break
-		case 0x000E:
-			fmt.Println("Return from subroutine")
-			break
-		default:
-			// c.pc += 2
-			fmt.Println("Unknown opcode [0x0000]: 0x", strconv.FormatInt(int64(opcode), 16))
-		}
 		break
 	case 0xE000:
 		switch opcode & 0x00FF {

@@ -28,7 +28,6 @@ func main() {
 	chip8.LoadRom(rom)
 	chip8.DumpMemory()
 
-	// SDL - Graphics
 	sdl.Init(sdl.INIT_EVERYTHING)
 	defer sdl.Quit()
 
@@ -53,7 +52,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer sdlTexture.Destroy() // Don't forget to clean up
+	defer sdlTexture.Destroy()
 
 	keepRunning := true
 	for keepRunning {
@@ -65,8 +64,6 @@ func main() {
 				println("Quit")
 				keepRunning = false
 				break
-			default:
-				// fmt.Println("evento:", event)
 			}
 		}
 
@@ -80,7 +77,6 @@ func main() {
 
 			err := sdlTexture.Update(nil, unsafe.Pointer(&pixels[0]), 64*int(unsafe.Sizeof(uint32(0))))
 			if err != nil {
-				// Handle error
 				panic(err)
 			}
 
@@ -89,6 +85,6 @@ func main() {
 			renderer.Present()
 		}
 
-		sdl.Delay(100)
+		sdl.Delay(16)
 	}
 }

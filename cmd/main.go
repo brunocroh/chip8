@@ -59,7 +59,52 @@ func main() {
 		chip8.Cycle()
 
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch event.(type) {
+			switch et := event.(type) {
+			case *sdl.KeyboardEvent:
+				if et.Type == sdl.KEYDOWN || et.Type == sdl.KEYUP {
+					var ev uint8
+
+					if et.Type == sdl.KEYDOWN {
+						ev = 1
+					} else {
+						ev = 0
+					}
+
+					switch et.Keysym.Sym {
+					case sdl.K_1:
+						chip8.OnKeyEvent(0x1, ev)
+					case sdl.K_2:
+						chip8.OnKeyEvent(0x2, ev)
+					case sdl.K_3:
+						chip8.OnKeyEvent(0x3, ev)
+					case sdl.K_4:
+						chip8.OnKeyEvent(0xC, ev)
+					case sdl.K_q:
+						chip8.OnKeyEvent(0x4, ev)
+					case sdl.K_w:
+						chip8.OnKeyEvent(0x5, ev)
+					case sdl.K_e:
+						chip8.OnKeyEvent(0x6, ev)
+					case sdl.K_r:
+						chip8.OnKeyEvent(0xD, ev)
+					case sdl.K_a:
+						chip8.OnKeyEvent(0x7, ev)
+					case sdl.K_s:
+						chip8.OnKeyEvent(0x8, ev)
+					case sdl.K_d:
+						chip8.OnKeyEvent(0x9, ev)
+					case sdl.K_f:
+						chip8.OnKeyEvent(0xE, ev)
+					case sdl.K_z:
+						chip8.OnKeyEvent(0xA, ev)
+					case sdl.K_x:
+						chip8.OnKeyEvent(0x0, ev)
+					case sdl.K_c:
+						chip8.OnKeyEvent(0xB, ev)
+					case sdl.K_v:
+						chip8.OnKeyEvent(0xF, ev)
+					}
+				}
 			case *sdl.QuitEvent:
 				println("Quit")
 				keepRunning = false
@@ -82,7 +127,5 @@ func main() {
 			renderer.Copy(sdlTexture, nil, nil)
 			renderer.Present()
 		}
-
-		// 1700/s
 	}
 }

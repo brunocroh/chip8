@@ -41,6 +41,7 @@ type Chip8 interface {
 	Clear()
 	updateTimers()
 	incrementCounter()
+	OnKeyEvent(id uint8, down bool)
 }
 
 type chip8 struct {
@@ -135,74 +136,57 @@ func (c *chip8) Cycle() {
 		// 00E0 - CLS
 		case 0x0000:
 			c.Clear()
-			break
 		// 00EE - RET
 		case 0x000E:
 			c.pc = c.stack[c.sp]
 			c.sp -= 1
-			break
-		default:
-			fmt.Println("Unknown opcode [0x0000]: 0x", strconv.FormatInt(int64(opcode), 16))
 		}
-		break
 	// 1nnn - JP addr
 	case 0x1000:
 		c.pc = nnn
-		break
 	// 2nnn - CALL addr
 	case 0x2000:
 		c.sp += 1
 		c.stack[c.sp] = c.pc
 		c.pc = nnn
-		break
 	// 3xkk - SE Vx, byte
 	case 0x3000:
 		if c.register[x] == kk {
 			c.pc += 2
 		}
-		break
 	// 4xkk - SNE Vx, byte
 	case 0x4000:
 		if c.register[x] != kk {
 			c.pc += 2
 		}
-		break
 	// 5xy0 - SE Vx, Vy
 	case 0x5000:
 		if c.register[x] == c.register[y] {
 			c.pc += 2
 		}
-		break
 	// 6xkk - LD Vx, byte
 	case 0x6000:
 		c.register[x] = kk
-		break
 	case 0x7000:
 		c.register[x] += kk
-		break
 	case 0x8000:
 		switch n {
 		// 8xy0 - LD Vx, Vy
 		case 0:
 			c.register[x] = c.register[y]
-			break
 		// 8xy1 - OR Vx, Vy
 		case 1:
 			c.register[x] = c.register[x] | c.register[y]
-			break
 		// 8xy2 - AND Vx, Vy
 		case 2:
 			c.register[x] = c.register[x] & c.register[y]
-			break
 		// 8xy3 - XOR Vx, Vy
 		case 3:
 			c.register[x] = c.register[x] ^ c.register[y]
-			break
 		// 8xy4 - ADD Vx, Vy
 		case 4:
 			c.register[x] += c.register[y]
 			c.register[0xF] = 1
-			break
 		// 8xy5 - SUB Vx, Vy
 		case 5:
 			if c.register[x] > c.register[y] {
@@ -211,7 +195,6 @@ func (c *chip8) Cycle() {
 				c.register[0xF] = 0
 			}
 			c.register[x] -= c.register[y]
-			break
 		// 8xy6 - SHR Vx {, Vy}
 		case 6:
 			bit := c.register[x]
@@ -223,7 +206,6 @@ func (c *chip8) Cycle() {
 			}
 
 			c.register[x] >>= 1
-			break
 		// 8xy7 - SUBN Vx, Vy
 		case 7:
 			if c.register[y] > c.register[x] {
@@ -233,7 +215,6 @@ func (c *chip8) Cycle() {
 			}
 
 			c.register[x] = c.register[y] - c.register[x]
-			break
 		// 8xyE - SHL, VX {, Vy}
 		case 0xE:
 			bit := c.register[x]
@@ -245,25 +226,20 @@ func (c *chip8) Cycle() {
 			}
 
 			c.register[x] *= 2
-			break
 		}
 	case 0x9000:
 		if c.register[x] != c.register[y] {
 			c.pc += 2
 		}
-		break
 	// Annn
 	case 0xA000:
 		c.index = nnn
-		break
 	// Bnnn
 	case 0xB000:
 		c.pc = nnn + uint16(c.register[0])
-		break
 	case 0xC000:
 		random := rand.Intn(255)
 		c.register[x] = uint8(random) & kk
-		break
 	// Dxyn
 	case 0xD000:
 		x := uint16(c.register[x])
@@ -288,63 +264,44 @@ func (c *chip8) Cycle() {
 		}
 		c.index = nnn
 		c.DrawFlag = true
-		break
 	case 0xE000:
 		switch opcode & 0x00FF {
 		case 0x009E:
 			fmt.Println("E-9e")
-			break
 		case 0x00A1:
-			fmt.Println("E-A1")
-			break
-		default:
-			fmt.Println("E opcode not found")
+			// fmt.Println("WAITING A KEY BE PRESSED")
+			// c.pc -= 2
 		}
-		break
 	case 0xF000:
 		switch opcode & 0x00FF {
 		case 0x0007:
 			c.register[x] = c.delayTimer
-			break
 		case 0x000A:
 			//implement keypass
-			break
 		case 0x0015:
 			c.delayTimer = c.register[x]
-			break
 		case 0x0018:
 			c.soundTimer = c.register[x]
-			break
 		case 0x001E:
 			c.index = c.index + uint16(c.register[x])
-			break
 		case 0x0029:
 			c.index = uint16(c.register[x])
-			break
 		case 0x0033:
 			number := c.register[x]
 			c.memory[c.index] = number / 100
 			c.memory[c.index+1] = (number % 100) / 10
 			c.memory[c.index+2] = (number % 100) % 10
-			break
 		case 0x0055:
 			for i := uint16(0); i <= x; i++ {
 				c.memory[c.index+i] = c.register[i]
 			}
 			c.index += x + 1
-			break
 		case 0x0065:
 			for i := uint16(0); i <= x; i++ {
 				c.register[i] = c.memory[c.index+i]
 			}
 			c.index += x + 1
-			break
-		default:
-			fmt.Println("F NOT HANDLED OPCODE: ", strconv.FormatInt(int64(opcode), 16))
 		}
-		break
-	default:
-		fmt.Println("NOT HANDLED OPCODE: ", strconv.FormatInt(int64(opcode), 16))
 	}
 	c.updateTimers()
 }
@@ -356,6 +313,10 @@ func (c *chip8) Quit() {
 		fmt.Println(strconv.FormatInt(int64(v), 16))
 	}
 	fmt.Println("=====")
+}
+
+func (c *chip8) OnKeyEvent(key uint8, press uint8) {
+	c.keypad[key] = press
 }
 
 func (c *chip8) updateTimers() {

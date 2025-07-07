@@ -7,7 +7,7 @@ import (
 
 func LoadRom() ([]byte, error) {
 	// data, err := os.ReadFile("./roms/IBM_LOGO.ch8")
-	data, err := os.ReadFile("./roms/tetris2.ch8")
+	data, err := os.ReadFile("./roms/tetris.ch8")
 	// data, err := os.ReadFile("./roms/test_opcode.ch8")
 
 	if err != nil {

@@ -269,8 +269,9 @@ func (c *chip8) Cycle() {
 		case 0x009E:
 			fmt.Println("E-9e")
 		case 0x00A1:
-			// fmt.Println("WAITING A KEY BE PRESSED")
-			// c.pc -= 2
+			if c.keypad[c.register[x]] == 0 {
+				c.pc += 2
+			}
 		}
 	case 0xF000:
 		switch opcode & 0x00FF {

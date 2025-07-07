@@ -252,7 +252,7 @@ func (c *chip8) Cycle() {
 			c.pc += 2
 		}
 		break
-	// // Annn
+	// Annn
 	case 0xA000:
 		c.index = nnn
 		break
@@ -303,26 +303,35 @@ func (c *chip8) Cycle() {
 		break
 	case 0xF000:
 		switch opcode & 0x00FF {
-		case 0x0055:
-			for i := uint16(0); i <= x; i++ {
-				c.memory[c.index+i] = c.register[i]
-			}
-			c.index += x + 1
-			break
 		case 0x0007:
 			c.register[x] = c.delayTimer
+			break
+		case 0x000A:
+			//implement keypass
 			break
 		case 0x0015:
 			c.delayTimer = c.register[x]
 			break
+		case 0x0018:
+			c.soundTimer = c.register[x]
+			break
 		case 0x001E:
 			c.index = c.index + uint16(c.register[x])
+			break
+		case 0x0029:
+			c.index = uint16(c.register[x])
 			break
 		case 0x0033:
 			number := c.register[x]
 			c.memory[c.index] = number / 100
 			c.memory[c.index+1] = (number % 100) / 10
 			c.memory[c.index+2] = (number % 100) % 10
+			break
+		case 0x0055:
+			for i := uint16(0); i <= x; i++ {
+				c.memory[c.index+i] = c.register[i]
+			}
+			c.index += x + 1
 			break
 		case 0x0065:
 			for i := uint16(0); i <= x; i++ {

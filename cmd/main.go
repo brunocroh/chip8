@@ -67,7 +67,6 @@ func main() {
 		}
 
 		if chip8.DrawFlag {
-			fmt.Println("RENDER")
 			chip8.DrawFlag = false
 
 			for i, pixel := range chip8.Video {
@@ -84,6 +83,6 @@ func main() {
 			renderer.Present()
 		}
 
-		sdl.Delay(16)
+		// 1700/s
 	}
 }

@@ -267,7 +267,9 @@ func (c *chip8) Cycle() {
 	case 0xE000:
 		switch opcode & 0x00FF {
 		case 0x009E:
-			fmt.Println("E-9e")
+			if c.keypad[c.register[x]] == 1 {
+				c.pc += 2
+			}
 		case 0x00A1:
 			if c.keypad[c.register[x]] == 0 {
 				c.pc += 2
@@ -278,7 +280,12 @@ func (c *chip8) Cycle() {
 		case 0x0007:
 			c.register[x] = c.delayTimer
 		case 0x000A:
-			//implement keypass
+			for _, v := range c.keypad {
+				if v == 1 {
+					break
+				}
+			}
+			c.pc -= 2
 		case 0x0015:
 			c.delayTimer = c.register[x]
 		case 0x0018:

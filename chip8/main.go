@@ -197,43 +197,39 @@ func (c *chip8) Cycle() {
 
 		// 8xy5 - SUB Vx, Vy
 		case 5:
-			if c.register[x] > c.register[y] {
+			originalVX := c.register[x]
+			c.register[x] = originalVX - c.register[y]
+			if originalVX >= c.register[y] {
 				c.register[0xF] = 1
 			} else {
 				c.register[0xF] = 0
 			}
-			c.register[x] -= c.register[y]
 		// 8xy6 - SHR Vx {, Vy}
 		case 6:
 			bit := c.register[x]
 
+			c.register[x] = c.register[x] >> 1
 			if bit&0x01 == 1 {
 				c.register[0xF] = 1
 			} else {
 				c.register[0xF] = 0
 			}
 
-			c.register[x] >>= 1
 		// 8xy7 - SUBN Vx, Vy
 		case 7:
-			if c.register[y] > c.register[x] {
+			originalVX := c.register[x]
+			c.register[x] = c.register[y] - c.register[x]
+			if c.register[y] >= originalVX {
 				c.register[0xF] = 1
 			} else {
 				c.register[0xF] = 0
 			}
-
-			c.register[x] = c.register[y] - c.register[x]
 		// 8xyE - SHL, VX {, Vy}
 		case 0xE:
 			bit := c.register[x]
 
-			if bit&0x01 == 1 {
-				c.register[0xF] = 1
-			} else {
-				c.register[0xF] = 0
-			}
-
-			c.register[x] *= 2
+			c.register[x] = c.register[x] << 1
+			c.register[0xF] = bit & 0x80 >> 7
 		}
 	case 0x9000:
 		if c.register[x] != c.register[y] {

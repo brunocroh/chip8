@@ -64,6 +64,23 @@ func main() {
 	for keepRunning {
 		chip8.Cycle()
 
+		if chip8.DrawFlag {
+			chip8.DrawFlag = false
+
+			for i, pixel := range chip8.Video {
+				pixels[i] = (0x00FFFFFF * pixel) | 0xFF000000
+			}
+
+			err := sdlTexture.Update(nil, unsafe.Pointer(&pixels[0]), 64*int(unsafe.Sizeof(uint32(0))))
+			if err != nil {
+				panic(err)
+			}
+
+			renderer.Clear()
+			renderer.Copy(sdlTexture, nil, nil)
+			renderer.Present()
+		}
+
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch et := event.(type) {
 			case *sdl.KeyboardEvent:
@@ -117,21 +134,6 @@ func main() {
 			}
 		}
 
-		if chip8.DrawFlag {
-			chip8.DrawFlag = false
-
-			for i, pixel := range chip8.Video {
-				pixels[i] = (0x00FFFFFF * pixel) | 0xFF000000
-			}
-
-			err := sdlTexture.Update(nil, unsafe.Pointer(&pixels[0]), 64*int(unsafe.Sizeof(uint32(0))))
-			if err != nil {
-				panic(err)
-			}
-
-			renderer.Clear()
-			renderer.Copy(sdlTexture, nil, nil)
-			renderer.Present()
-		}
+		sdl.Delay(1000 / 60)
 	}
 }

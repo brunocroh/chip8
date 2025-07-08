@@ -2,6 +2,7 @@ package chip8
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"slices"
 	"strconv"
@@ -185,8 +186,15 @@ func (c *chip8) Cycle() {
 			c.register[x] = c.register[x] ^ c.register[y]
 		// 8xy4 - ADD Vx, Vy
 		case 4:
-			c.register[x] += c.register[y]
-			c.register[0xF] = 1
+			sum := uint16(c.register[x]) + uint16(c.register[y])
+
+			c.register[x] = uint8(sum)
+			if sum > math.MaxUint8 {
+				c.register[0xF] = 1
+			} else {
+				c.register[0xF] = 0
+			}
+
 		// 8xy5 - SUB Vx, Vy
 		case 5:
 			if c.register[x] > c.register[y] {

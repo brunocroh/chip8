@@ -280,12 +280,16 @@ func (c *chip8) Cycle() {
 		case 0x0007:
 			c.register[x] = c.delayTimer
 		case 0x000A:
-			for _, v := range c.keypad {
+			var keyFound uint8
+			for i, v := range c.keypad {
 				if v == 1 {
-					break
+					keyFound = uint8(i)
 				}
 			}
-			c.pc -= 2
+
+			if keyFound == 0 {
+				c.pc -= 2
+			}
 		case 0x0015:
 			c.delayTimer = c.register[x]
 		case 0x0018:

@@ -4,16 +4,22 @@ import (
 	"brunocroh/chip8/chip8"
 	"brunocroh/chip8/utils"
 	"fmt"
+	"os"
+	"time"
 	"unsafe"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
 
 func main() {
+	romPath := os.Args[1:]
 	var pixels [2048]uint32
 	fmt.Println("start")
 
-	rom, err := utils.LoadRom()
+	fmt.Println("Initiliaze rom:", romPath)
+	time.Sleep(500 * time.Millisecond)
+
+	rom, err := utils.LoadRom(romPath[0])
 
 	if err != nil {
 		fmt.Println("fail to load rom")

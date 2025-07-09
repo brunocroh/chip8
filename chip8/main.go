@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"slices"
-	"strconv"
 )
 
 const START_ADDRESS = 0x200
@@ -30,8 +28,6 @@ var fontset = [FONTSET_SIZE]byte{
 	0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
 	0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 }
-
-var teste []uint16
 
 type Chip8 interface {
 	LoadRom(rom []byte)
@@ -96,7 +92,7 @@ func (c *chip8) LoadRom(rom []byte) {
 }
 
 func (c *chip8) DumpMemory() {
-	fmt.Printf("% x\n", c.memory)
+	fmt.Printf("%x\n", c.memory)
 }
 
 func (c *chip8) fetchOpcode() uint16 {
@@ -114,15 +110,8 @@ func (c *chip8) Clear() {
 	c.DrawFlag = true
 }
 
-func uniqueOpcodes(opcode uint16) bool {
-	return slices.Contains(teste, opcode)
-}
-
 func (c *chip8) Cycle() {
 	opcode := c.fetchOpcode()
-	if !uniqueOpcodes(opcode) {
-		teste = append(teste, opcode)
-	}
 
 	nnn := opcode & 0x0FFF
 	kk := uint8(opcode & 0x00FF)
@@ -214,7 +203,6 @@ func (c *chip8) Cycle() {
 			} else {
 				c.register[0xF] = 0
 			}
-
 		// 8xy7 - SUBN Vx, Vy
 		case 7:
 			originalVX := c.register[x]
@@ -229,7 +217,11 @@ func (c *chip8) Cycle() {
 			bit := c.register[x]
 
 			c.register[x] = c.register[x] << 1
-			c.register[0xF] = bit & 0x80 >> 7
+			if bit&0x01 == 1 {
+				c.register[0xF] = 1
+			} else {
+				c.register[0xF] = 0
+			}
 		}
 	case 0x9000:
 		if c.register[x] != c.register[y] {
@@ -258,15 +250,14 @@ func (c *chip8) Cycle() {
 					xPos := (x + xLine) % 64
 					yPos := (y + yLine) % 32
 					screenPos := xPos + (yPos * 64)
+					fmt.Printf("x: %d, y: %d, xPos: %d, yPos: %d, screen: %d\n", x, y, xPos, yPos, screenPos)
 					if c.Video[screenPos] == 1 {
 						c.register[0xF] = 1
 					}
-
 					c.Video[screenPos] ^= 1
 				}
 			}
 		}
-		c.index = nnn
 		c.DrawFlag = true
 	case 0xE000:
 		switch opcode & 0x00FF {
@@ -324,11 +315,6 @@ func (c *chip8) Cycle() {
 
 func (c *chip8) Quit() {
 	fmt.Println("Chip-8 Quit")
-	fmt.Println("=====")
-	for _, v := range teste {
-		fmt.Println(strconv.FormatInt(int64(v), 16))
-	}
-	fmt.Println("=====")
 }
 
 func (c *chip8) OnKeyEvent(key uint8, press uint8) {

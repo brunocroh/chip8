@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"os"
 	"time"
-	"unsafe"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
 
 func main() {
 	romPath := os.Args[1:]
-	var pixels [2048]uint32
 	fmt.Println("start")
 
 	fmt.Println("Initiliaze rom:", romPath)
@@ -49,35 +47,31 @@ func main() {
 	}
 	defer renderer.Destroy()
 
-	sdlTexture, err := renderer.CreateTexture(
-		sdl.PIXELFORMAT_ARGB8888,
-		sdl.TEXTUREACCESS_STREAMING,
-		64,
-		32,
-	)
-	if err != nil {
-		panic(err)
-	}
-	defer sdlTexture.Destroy()
-
 	keepRunning := true
 	for keepRunning {
 		chip8.Cycle()
 
 		if chip8.DrawFlag {
 			chip8.DrawFlag = false
-
-			for i, pixel := range chip8.Video {
-				pixels[i] = (0x00FFFFFF * pixel) | 0xFF000000
-			}
-
-			err := sdlTexture.Update(nil, unsafe.Pointer(&pixels[0]), 64*int(unsafe.Sizeof(uint32(0))))
-			if err != nil {
-				panic(err)
-			}
-
+			renderer.SetDrawColor(255, 0, 0, 255)
 			renderer.Clear()
-			renderer.Copy(sdlTexture, nil, nil)
+
+			// Get the display buffer and render
+			for i, v := range chip8.Video {
+				if v != 0 {
+					renderer.SetDrawColor(255, 255, 255, 255)
+				} else {
+					renderer.SetDrawColor(0, 0, 0, 255)
+				}
+
+				renderer.FillRect(&sdl.Rect{
+					Y: int32(i/64) * 16,
+					X: int32(i%64) * 16,
+					W: 16,
+					H: 16,
+				})
+			}
+
 			renderer.Present()
 		}
 
@@ -134,6 +128,6 @@ func main() {
 			}
 		}
 
-		sdl.Delay(1000 / 60)
+		sdl.Delay(1000 / 120)
 	}
 }

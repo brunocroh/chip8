@@ -223,6 +223,7 @@ func (c *chip8) Cycle() {
 				c.register[0xF] = 0
 			}
 		}
+	// 9xy0 - SNE Vx, Vy
 	case 0x9000:
 		if c.register[x] != c.register[y] {
 			c.pc += 2
@@ -233,10 +234,11 @@ func (c *chip8) Cycle() {
 	// Bnnn
 	case 0xB000:
 		c.pc = nnn + uint16(c.register[0])
+	// Cxkk - RND Vx, byte
 	case 0xC000:
 		random := rand.Intn(255)
 		c.register[x] = uint8(random) & kk
-	// Dxyn
+	// Dxyn - DRW Vx, Vy, nibble
 	case 0xD000:
 		x := uint16(c.register[x])
 		y := uint16(c.register[y])
@@ -261,10 +263,12 @@ func (c *chip8) Cycle() {
 		c.DrawFlag = true
 	case 0xE000:
 		switch opcode & 0x00FF {
+		// Ex9E - SKP VX
 		case 0x009E:
 			if c.keypad[c.register[x]] == 1 {
 				c.pc += 2
 			}
+		// ExA1 - SKNP VX
 		case 0x00A1:
 			if c.keypad[c.register[x]] == 0 {
 				c.pc += 2
@@ -272,8 +276,10 @@ func (c *chip8) Cycle() {
 		}
 	case 0xF000:
 		switch opcode & 0x00FF {
+		// Fx07 - LD Vx, DT
 		case 0x0007:
 			c.register[x] = c.delayTimer
+		// Fx0A - LD Vx, K
 		case 0x000A:
 			var keyFound uint8
 			for i, v := range c.keypad {
@@ -283,26 +289,34 @@ func (c *chip8) Cycle() {
 			}
 
 			if keyFound == 0 {
+				fmt.Println("key found")
 				c.pc -= 2
 			}
+		// Fx15 - LD DT, Vx
 		case 0x0015:
 			c.delayTimer = c.register[x]
+		// Fx18 - LD ST, Vx
 		case 0x0018:
 			c.soundTimer = c.register[x]
+		// Fx1E - ADD I, Vx
 		case 0x001E:
 			c.index = c.index + uint16(c.register[x])
+		// Fx29 - LD F, Vx
 		case 0x0029:
 			c.index = uint16(c.register[x])
+		// Fx33 - LD B, Vx
 		case 0x0033:
 			number := c.register[x]
 			c.memory[c.index] = number / 100
 			c.memory[c.index+1] = (number % 100) / 10
 			c.memory[c.index+2] = (number % 100) % 10
+		// Fx55 - LD [I], Vx
 		case 0x0055:
 			for i := uint16(0); i <= x; i++ {
 				c.memory[c.index+i] = c.register[i]
 			}
 			c.index += x + 1
+		// Fx65 - LD Vx, [I]
 		case 0x0065:
 			for i := uint16(0); i <= x; i++ {
 				c.register[i] = c.memory[c.index+i]

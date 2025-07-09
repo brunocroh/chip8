@@ -38,7 +38,7 @@ type Chip8 interface {
 	Clear()
 	updateTimers()
 	incrementCounter()
-	OnKeyEvent(id uint8, down bool)
+	OnKeyEvent(id uint8, down uint8)
 }
 
 type chip8 struct {
@@ -252,7 +252,6 @@ func (c *chip8) Cycle() {
 					xPos := (x + xLine) % 64
 					yPos := (y + yLine) % 32
 					screenPos := xPos + (yPos * 64)
-					fmt.Printf("x: %d, y: %d, xPos: %d, yPos: %d, screen: %d\n", x, y, xPos, yPos, screenPos)
 					if c.Video[screenPos] == 1 {
 						c.register[0xF] = 1
 					}
@@ -281,15 +280,15 @@ func (c *chip8) Cycle() {
 			c.register[x] = c.delayTimer
 		// Fx0A - LD Vx, K
 		case 0x000A:
-			var keyFound uint8
-			for i, v := range c.keypad {
+			keyFound := false
+			for _, v := range c.keypad {
 				if v == 1 {
-					keyFound = uint8(i)
+					keyFound = true
+					break
 				}
 			}
 
-			if keyFound == 0 {
-				fmt.Println("key found")
+			if !keyFound {
 				c.pc -= 2
 			}
 		// Fx15 - LD DT, Vx

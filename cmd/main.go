@@ -14,8 +14,6 @@ func main() {
 	ticker := time.NewTicker(time.Second / 500)
 	defer ticker.Stop()
 	romPath := os.Args[1:]
-	fmt.Println("start")
-
 	fmt.Println("Initiliaze rom:", romPath)
 	time.Sleep(500 * time.Millisecond)
 
@@ -51,14 +49,12 @@ func main() {
 
 	go timersThread(chip8)
 	for range ticker.C {
-		fmt.Println("CYCLE")
 		chip8.Cycle()
 		if chip8.DrawFlag {
 			chip8.DrawFlag = false
 			renderer.SetDrawColor(255, 0, 0, 255)
 			renderer.Clear()
 
-			// Get the display buffer and render
 			for i, v := range chip8.Video {
 				if v != 0 {
 					renderer.SetDrawColor(255, 255, 255, 255)
@@ -138,7 +134,6 @@ func listenKeypad(chip8 chip8.Chip8) {
 func timersThread(chip8 chip8.Chip8) {
 	tickerTimers := time.NewTicker(time.Second / 60)
 	for range tickerTimers.C {
-		fmt.Println("timers")
 		chip8.UpdateTimers()
 	}
 }

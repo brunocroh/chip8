@@ -36,7 +36,7 @@ type Chip8 interface {
 	DumpMemory()
 	Cycle()
 	Clear()
-	updateTimers()
+	UpdateTimers()
 	incrementCounter()
 	OnKeyEvent(id uint8, down uint8)
 }
@@ -323,7 +323,6 @@ func (c *chip8) Cycle() {
 			c.index += x + 1
 		}
 	}
-	c.updateTimers()
 }
 
 func (c *chip8) Quit() {
@@ -334,7 +333,7 @@ func (c *chip8) OnKeyEvent(key uint8, press uint8) {
 	c.keypad[key] = press
 }
 
-func (c *chip8) updateTimers() {
+func (c *chip8) UpdateTimers() {
 	if c.delayTimer > 0 {
 		c.delayTimer = c.delayTimer - 1
 	}

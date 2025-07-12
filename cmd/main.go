@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	ticker := time.NewTicker(time.Second / 700)
+	ticker := time.NewTicker(time.Second / 500)
 	defer ticker.Stop()
 	romPath := os.Args[1:]
 	fmt.Println("start")
@@ -49,7 +49,9 @@ func main() {
 	}
 	defer renderer.Destroy()
 
+	go timersThread(chip8)
 	for range ticker.C {
+		fmt.Println("CYCLE")
 		chip8.Cycle()
 		if chip8.DrawFlag {
 			chip8.DrawFlag = false
@@ -57,7 +59,6 @@ func main() {
 			renderer.Clear()
 
 			// Get the display buffer and render
-			start := time.Now()
 			for i, v := range chip8.Video {
 				if v != 0 {
 					renderer.SetDrawColor(255, 255, 255, 255)
@@ -74,8 +75,6 @@ func main() {
 			}
 
 			renderer.Present()
-			duration := time.Since(start)
-			fmt.Println("duration of render:", duration)
 		}
 		listenKeypad(chip8)
 	}
@@ -134,4 +133,12 @@ func listenKeypad(chip8 chip8.Chip8) {
 		}
 	}
 
+}
+
+func timersThread(chip8 chip8.Chip8) {
+	tickerTimers := time.NewTicker(time.Second / 60)
+	for range tickerTimers.C {
+		fmt.Println("timers")
+		chip8.UpdateTimers()
+	}
 }

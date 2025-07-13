@@ -1,7 +1,6 @@
 package cpu
 
 import (
-	"math"
 	"math/rand"
 )
 
@@ -24,68 +23,34 @@ func (c *chip8) decodeExecute(opcode uint16) {
 		case 0x000E:
 			c.instructions.ret(c)
 		}
-	// 1nnn - JP addr
 	case 0x1000:
-		c.pc = nnn
-	// 2nnn - CALL addr
+		c.instructions.jump(c, nnn)
 	case 0x2000:
-		c.sp += 1
-		c.stack[c.sp] = c.pc
-		c.pc = nnn
-	// 3xkk - SE Vx, byte
+		c.instructions.callSubroutine(c, nnn)
 	case 0x3000:
-		if c.register[x] == kk {
-			c.pc += 2
-		}
-	// 4xkk - SNE Vx, byte
+		c.instructions.seVxKk(c, x, kk)
 	case 0x4000:
-		if c.register[x] != kk {
-			c.pc += 2
-		}
-	// 5xy0 - SE Vx, Vy
+		c.instructions.SneVxKk(c, x, kk)
 	case 0x5000:
-		if c.register[x] == c.register[y] {
-			c.pc += 2
-		}
-	// 6xkk - LD Vx, byte
+		c.instructions.seVxVy(c, x, y)
 	case 0x6000:
-		c.register[x] = kk
+		c.instructions.loadVx(c, x, kk)
 	case 0x7000:
-		c.register[x] += kk
+		c.instructions.addVx(c, x, kk)
 	case 0x8000:
 		switch n {
-		// 8xy0 - LD Vx, Vy
 		case 0:
-			c.register[x] = c.register[y]
-		// 8xy1 - OR Vx, Vy
+			c.instructions.loadVyIntoVx(c, x, y)
 		case 1:
-			c.register[x] = c.register[x] | c.register[y]
-		// 8xy2 - AND Vx, Vy
+			c.instructions.orVxVy(c, x, y)
 		case 2:
-			c.register[x] = c.register[x] & c.register[y]
-		// 8xy3 - XOR Vx, Vy
+			c.instructions.andVxVy(c, x, y)
 		case 3:
-			c.register[x] = c.register[x] ^ c.register[y]
-		// 8xy4 - ADD Vx, Vy
+			c.instructions.xorVxVy(c, x, y)
 		case 4:
-			sum := uint16(c.register[x]) + uint16(c.register[y])
-
-			c.register[x] = uint8(sum)
-			if sum > math.MaxUint8 {
-				c.register[0xF] = 1
-			} else {
-				c.register[0xF] = 0
-			}
-
-		// 8xy5 - SUB Vx, Vy
+			c.instructions.addVxVy(c, x, y)
 		case 5:
-			originalVX := c.register[x]
-			c.register[x] = originalVX - c.register[y]
-			if originalVX >= c.register[y] {
-				c.register[0xF] = 1
-			} else {
-				c.register[0xF] = 0
-			}
+			c.instructions.subVxVy(c, x, y)
 		// 8xy6 - SHR Vx {, Vy}
 		case 6:
 			bit := c.register[x]

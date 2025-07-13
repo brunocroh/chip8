@@ -1,7 +1,7 @@
 package main
 
 import (
-	"brunocroh/chip8/chip8"
+	"brunocroh/chip8/cpu"
 	"brunocroh/chip8/utils"
 	"fmt"
 	"os"
@@ -24,7 +24,7 @@ func main() {
 		return
 	}
 
-	chip8 := chip8.NewChip8()
+	chip8 := cpu.NewChip8()
 
 	chip8.Init()
 	defer chip8.Quit()
@@ -76,7 +76,7 @@ func main() {
 	}
 }
 
-func listenKeypad(chip8 chip8.Chip8) {
+func listenKeypad(chip8 cpu.Chip8) {
 	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 		switch et := event.(type) {
 		case *sdl.KeyboardEvent:
@@ -131,7 +131,7 @@ func listenKeypad(chip8 chip8.Chip8) {
 
 }
 
-func timersThread(chip8 chip8.Chip8) {
+func timersThread(chip8 cpu.Chip8) {
 	tickerTimers := time.NewTicker(time.Second / 60)
 	for range tickerTimers.C {
 		chip8.UpdateTimers()

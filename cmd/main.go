@@ -10,6 +10,8 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+var keepRunning bool = true
+
 func main() {
 	ticker := time.NewTicker(time.Second / 500)
 	defer ticker.Stop()
@@ -20,17 +22,13 @@ func main() {
 	rom, err := utils.LoadRom(romPath[0])
 
 	if err != nil {
-		fmt.Println("fail to load rom")
+		fmt.Println("Fail to load rom")
 		return
 	}
 
 	chip8 := cpu.NewChip8()
-
 	chip8.Init()
-	defer chip8.Quit()
-
 	chip8.LoadRom(rom)
-	chip8.DumpMemory()
 
 	sdl.Init(sdl.INIT_EVERYTHING)
 	defer sdl.Quit()
@@ -48,7 +46,11 @@ func main() {
 	defer renderer.Destroy()
 
 	go timersThread(chip8)
+
 	for range ticker.C {
+		if !keepRunning {
+			os.Exit(1)
+		}
 		chip8.Cycle()
 		if chip8.DrawFlag {
 			chip8.DrawFlag = false
@@ -125,7 +127,7 @@ func listenKeypad(chip8 cpu.Chip8) {
 				}
 			}
 		case *sdl.QuitEvent:
-			println("Quit")
+			keepRunning = false
 		}
 	}
 

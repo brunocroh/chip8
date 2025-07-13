@@ -1,9 +1,5 @@
 package cpu
 
-import (
-	"fmt"
-)
-
 const START_ADDRESS = 0x200
 const FONTSET_START_ADDRESS = 0x50
 const FONTSET_SIZE = 80
@@ -30,8 +26,6 @@ var fontset = [FONTSET_SIZE]byte{
 type Chip8 interface {
 	LoadRom(rom []byte)
 	Init()
-	Quit()
-	DumpMemory()
 	Cycle()
 	UpdateTimers()
 	OnKeyEvent(id uint8, down uint8)
@@ -87,12 +81,6 @@ func (c *chip8) LoadRom(rom []byte) {
 	for i, v := range rom {
 		c.memory[START_ADDRESS+i] = v
 	}
-
-	fmt.Println("Loaded rom into memory")
-}
-
-func (c *chip8) DumpMemory() {
-	fmt.Printf("%x\n", c.memory)
 }
 
 func (c *chip8) incrementCounter() {
@@ -103,10 +91,6 @@ func (c *chip8) Cycle() {
 	opcode := c.fetchOpcode()
 	c.incrementCounter()
 	c.decodeExecute(opcode)
-}
-
-func (c *chip8) Quit() {
-	fmt.Println("Chip-8 Quit")
 }
 
 func (c *chip8) OnKeyEvent(key uint8, press uint8) {

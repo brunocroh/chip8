@@ -52,8 +52,8 @@ func main() {
 			os.Exit(1)
 		}
 		chip8.Cycle()
-		if chip8.DrawFlag {
-			chip8.DrawFlag = false
+		if chip8.DrawFlag() {
+			chip8.SetDrawFlag(true)
 			renderer.SetDrawColor(255, 0, 0, 255)
 			renderer.Clear()
 

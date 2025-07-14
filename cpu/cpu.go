@@ -28,6 +28,8 @@ type Chip8 interface {
 	Init()
 	Cycle()
 	UpdateTimers()
+	DrawFlag() bool
+	SetDrawFlag(v bool)
 	OnKeyEvent(id uint8, down uint8)
 }
 
@@ -43,9 +45,9 @@ type chip8 struct {
 	keypad       [16]uint8   // Keypad state
 	opcode       uint16      // Current opcode
 	instructions *instructions
+	drawFlag     bool // Draw flag
 
-	Video    [2048]uint32 // Display buffer
-	DrawFlag bool         // Draw flag
+	Video [2048]uint32 // Display buffer
 }
 
 func NewChip8() *chip8 {
@@ -63,7 +65,7 @@ func NewChip8() *chip8 {
 		instructions: NewInstructions(),
 
 		Video:    [2048]uint32{}, //64*32
-		DrawFlag: false,
+		drawFlag: false,
 	}
 }
 
@@ -95,4 +97,12 @@ func (c *chip8) Cycle() {
 
 func (c *chip8) OnKeyEvent(key uint8, press uint8) {
 	c.keypad[key] = press
+}
+
+func (c *chip8) DrawFlag() bool {
+	return c.drawFlag
+}
+
+func (c *chip8) SetDrawFlag(v bool) {
+	c.drawFlag = v
 }

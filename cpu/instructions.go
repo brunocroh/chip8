@@ -25,7 +25,7 @@ func (m *instructions) cls(c *chip8) {
 	for i := range c.Video {
 		c.Video[i] = 0
 	}
-	c.DrawFlag = true
+	c.SetDrawFlag(true)
 }
 
 /*
@@ -328,7 +328,7 @@ func (m *instructions) draw(c *chip8, x uint16, y uint16, n uint16) {
 			}
 		}
 	}
-	c.DrawFlag = true
+	c.SetDrawFlag(true)
 }
 
 /*

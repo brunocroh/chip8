@@ -53,7 +53,7 @@ func main() {
 		}
 		chip8.Cycle()
 		if chip8.DrawFlag() {
-			chip8.SetDrawFlag(true)
+			chip8.SetDrawFlag(false)
 			renderer.SetDrawColor(255, 0, 0, 255)
 			renderer.Clear()
 

@@ -31,6 +31,7 @@ type Chip8 interface {
 	DrawFlag() bool
 	SetDrawFlag(v bool)
 	OnKeyEvent(id uint8, down uint8)
+	GetVideo() [2048]uint32
 }
 
 type chip8 struct {
@@ -105,4 +106,8 @@ func (c *chip8) DrawFlag() bool {
 
 func (c *chip8) SetDrawFlag(v bool) {
 	c.drawFlag = v
+}
+
+func (c *chip8) GetVideo() [2048]uint32 {
+	return c.Video
 }

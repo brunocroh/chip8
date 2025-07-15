@@ -1,3 +1,5 @@
+//go:build js && wasm
+
 package main
 
 import (
@@ -6,11 +8,15 @@ import (
 	"os"
 	"syscall/js"
 	"time"
+	"unsafe"
 )
 
-var keepRunning bool = true
-var romLoaded bool = false
-var chip8 cpu.Chip8
+var (
+	keepRunning bool = true
+	romLoaded   bool = false
+	chip8       cpu.Chip8
+	drawFunc    js.Value
+)
 
 func main() {
 	js.Global().Set("loadRom", js.FuncOf(loadRomJS))
@@ -24,14 +30,6 @@ func main() {
 
 func listenKeypad() {
 	fmt.Println("map keyboard")
-}
-
-func timersThread(chip8 cpu.Chip8) {
-	tickerTimers := time.NewTicker(time.Second / 60)
-	for range tickerTimers.C {
-		fmt.Println("timers update")
-		chip8.UpdateTimers()
-	}
 }
 
 func loadRomJS(this js.Value, args []js.Value) interface{} {
@@ -52,22 +50,52 @@ func loadRomJS(this js.Value, args []js.Value) interface{} {
 }
 
 func startJS(this js.Value, args []js.Value) interface{} {
-	ticker := time.NewTicker(time.Second / 500)
-	defer ticker.Stop()
+	renderCb := args[0]
+	videoMemory := args[1]
 
-	go timersThread(chip8)
+	lastTimerUpdate := time.Now()
+	timerInterval := time.Second / 60
 
-	for range ticker.C {
+	lastCycle := time.Now()
+	cycleInterval := time.Second / 500
+
+	var emulatorLoop js.Func
+	emulatorLoop = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		if !keepRunning {
 			os.Exit(1)
 		}
-		chip8.Cycle()
-		if chip8.DrawFlag() {
-			chip8.SetDrawFlag(true)
-			fmt.Println("DRAW")
-		}
-		// listenKeypad()
-	}
 
+		now := time.Now()
+
+		if now.Sub(lastTimerUpdate) >= timerInterval {
+			chip8.UpdateTimers()
+			fmt.Println("updateTimer")
+			lastTimerUpdate = now
+		}
+
+		if now.Sub(lastCycle) >= cycleInterval {
+			chip8.Cycle()
+
+			if chip8.DrawFlag() {
+				chip8.SetDrawFlag(false)
+				fmt.Println("render")
+				video := chip8.GetVideo()
+
+				videoBytes := (*[2048 * 4]byte)(unsafe.Pointer(&video[0]))[:2048*4]
+				js.CopyBytesToJS(videoMemory, videoBytes)
+
+				renderCb.Invoke()
+			}
+
+			lastCycle = now
+		}
+
+		// listenKeypad()
+		js.Global().Call("requestAnimationFrame", emulatorLoop)
+		return nil
+
+	})
+
+	js.Global().Call("requestAnimationFrame", emulatorLoop)
 	return nil
 }

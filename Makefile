@@ -1,7 +1,7 @@
-test:
+run:
 	go run cmd/main.go $(ARGS)
 
-test-watch:
+run-watch:
 	gow run cmd/main.go $(ARGS)
 
 wasm:
@@ -11,4 +11,4 @@ wasm:
 server:
 	live-server public/
 
-.PHONY: test test-watch wasm server
+.PHONY: run run-watch wasm server

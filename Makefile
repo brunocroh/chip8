@@ -8,7 +8,7 @@ test:
 	go test -v --cover ./...
 
 wasm:
-	GOOS=js GOARCH=wasm go build -o chip8.wasm wasm/main.go
+	GOOS=js GOARCH=wasm go build -o chip8.wasm wasm/wasm.go
 	mv chip8.wasm public/
 
 server:

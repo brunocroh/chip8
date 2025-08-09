@@ -15,12 +15,12 @@ var (
 	keepRunning bool = true
 	romLoaded   bool = false
 	chip8       *cpu.Chip8
-	drawFunc    js.Value
 )
 
 func main() {
 	js.Global().Set("loadRom", js.FuncOf(loadRomJS))
 	js.Global().Set("start", js.FuncOf(startJS))
+	js.Global().Set("onKeyEvent", js.FuncOf(onKeyEvent))
 
 	chip8 = cpu.NewChip8()
 	chip8.Init()
@@ -28,8 +28,21 @@ func main() {
 	select {}
 }
 
-func listenKeypad() {
-	fmt.Println("map keyboard")
+func onKeyEvent(this js.Value, args []js.Value) interface{} {
+	fmt.Println("pre if")
+	if len(args) != 2 {
+		return nil
+	}
+	fmt.Println("after if")
+
+	key := uint8(args[0].Int())
+	press := uint8(args[1].Int())
+
+	fmt.Println("pressed: ", press)
+
+	chip8.OnKeyEvent(key, press)
+
+	return nil
 }
 
 func loadRomJS(this js.Value, args []js.Value) interface{} {
@@ -70,7 +83,6 @@ func startJS(this js.Value, args []js.Value) interface{} {
 
 		if now.Sub(lastTimerUpdate) >= timerInterval {
 			chip8.UpdateTimers()
-			fmt.Println("updateTimer")
 			lastTimerUpdate = now
 		}
 
@@ -79,7 +91,6 @@ func startJS(this js.Value, args []js.Value) interface{} {
 
 			if chip8.DrawFlag() {
 				chip8.SetDrawFlag(false)
-				fmt.Println("render")
 				video := chip8.GetVideo()
 
 				videoBytes := (*[2048 * 4]byte)(unsafe.Pointer(&video[0]))[:2048*4]
@@ -91,7 +102,6 @@ func startJS(this js.Value, args []js.Value) interface{} {
 			lastCycle = now
 		}
 
-		// listenKeypad()
 		js.Global().Call("requestAnimationFrame", emulatorLoop)
 		return nil
 

@@ -78,7 +78,7 @@ func main() {
 	}
 }
 
-func listenKeypad(chip8 cpu.Chip8) {
+func listenKeypad(chip8 *cpu.Chip8) {
 	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 		switch et := event.(type) {
 		case *sdl.KeyboardEvent:
@@ -133,7 +133,7 @@ func listenKeypad(chip8 cpu.Chip8) {
 
 }
 
-func timersThread(chip8 cpu.Chip8) {
+func timersThread(chip8 *cpu.Chip8) {
 	tickerTimers := time.NewTicker(time.Second / 60)
 	for range tickerTimers.C {
 		chip8.UpdateTimers()

@@ -9,6 +9,64 @@ const clearCanvas = () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 };
 
+const handleKeyPress = (key, value, cb) => {
+  let _key;
+  switch (key) {
+    case "1":
+      _key = 0x1;
+      break;
+    case "2":
+      _key = 0x2;
+      break;
+    case "3":
+      _key = 0x3;
+      break;
+    case "4":
+      _key = 0xc;
+      break;
+    case "q":
+      _key = 0x4;
+      break;
+    case "w":
+      _key = 0x5;
+      break;
+    case "e":
+      _key = 0x6;
+      break;
+    case "r":
+      _key = 0xd;
+      break;
+    case "a":
+      _key = 0x7;
+      break;
+    case "s":
+      _key = 0x8;
+      break;
+    case "d":
+      _key = 0x9;
+      break;
+    case "f":
+      _key = 0xe;
+      break;
+    case "z":
+      _key = 0xa;
+      break;
+    case "x":
+      _key = 0x0;
+      break;
+    case "c":
+      _key = 0xb;
+      break;
+    case "v":
+      _key = 0xf;
+      break;
+    default:
+      // key not map, just ignore
+      return;
+  }
+  cb(_key, value);
+};
+
 const renderCallback = (_video) => {
   const video = convertToUint32Array(_video);
   clearCanvas();
@@ -45,6 +103,14 @@ WebAssembly.instantiateStreaming(fetch("chip8.wasm"), go.importObject).then(
   (wasm) => {
     const { instance } = wasm;
     go.run(wasm.instance);
+
+    addEventListener("keydown", (event) => {
+      handleKeyPress(event.key, 1, window.onKeyEvent);
+    });
+
+    addEventListener("keyup", (event) => {
+      handleKeyPress(event.key, 0, window.onKeyEvent);
+    });
 
     addEventListener("input", (event) => {
       const fileReader = new FileReader();

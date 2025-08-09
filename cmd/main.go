@@ -1,9 +1,12 @@
+//go:build !js && !wasm
+// +build !js,!wasm
+
 package main
 
 import (
-	"brunocroh/chip8/cpu"
-	"brunocroh/chip8/utils"
 	"fmt"
+	"github.com/brunocroh/chip8/cpu"
+	"github.com/brunocroh/chip8/utils"
 	"os"
 	"time"
 

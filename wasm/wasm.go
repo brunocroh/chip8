@@ -3,8 +3,7 @@
 package main
 
 import (
-	"brunocroh/chip8/cpu"
-	"fmt"
+	"github.com/brunocroh/chip8/cpu"
 	"os"
 	"syscall/js"
 	"time"
@@ -29,16 +28,12 @@ func main() {
 }
 
 func onKeyEvent(this js.Value, args []js.Value) interface{} {
-	fmt.Println("pre if")
 	if len(args) != 2 {
 		return nil
 	}
-	fmt.Println("after if")
 
 	key := uint8(args[0].Int())
 	press := uint8(args[1].Int())
-
-	fmt.Println("pressed: ", press)
 
 	chip8.OnKeyEvent(key, press)
 

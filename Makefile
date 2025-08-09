@@ -7,6 +7,9 @@ run-watch:
 test:
 	go test -v --cover ./...
 
+build:
+	go build -o chip8 cmd/main.go 
+
 wasm:
 	GOOS=js GOARCH=wasm go build -o chip8.wasm wasm/wasm.go
 	mv chip8.wasm public/

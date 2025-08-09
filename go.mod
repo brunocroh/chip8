@@ -1,4 +1,4 @@
-module brunocroh/chip8
+module github.com/brunocroh/chip8
 
 go 1.23.6
 

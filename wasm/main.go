@@ -14,7 +14,7 @@ import (
 var (
 	keepRunning bool = true
 	romLoaded   bool = false
-	chip8       cpu.Chip8
+	chip8       *cpu.Chip8
 	drawFunc    js.Value
 )
 
@@ -44,6 +44,7 @@ func loadRomJS(this js.Value, args []js.Value) interface{} {
 
 	js.CopyBytesToGo(rom, uints8Array)
 
+	chip8.Reset()
 	chip8.LoadRom(rom)
 	romLoaded = true
 	return nil

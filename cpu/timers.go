@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (c *chip8) UpdateTimers() {
+func (c *Chip8) UpdateTimers() {
 	if c.delayTimer > 0 {
 		c.delayTimer = c.delayTimer - 1
 	}

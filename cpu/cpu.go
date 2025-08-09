@@ -23,18 +23,7 @@ var fontset = [FONTSET_SIZE]byte{
 	0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 }
 
-type Chip8 interface {
-	LoadRom(rom []byte)
-	Init()
-	Cycle()
-	UpdateTimers()
-	DrawFlag() bool
-	SetDrawFlag(v bool)
-	OnKeyEvent(id uint8, down uint8)
-	GetVideo() [2048]uint32
-}
-
-type chip8 struct {
+type Chip8 struct {
 	register     [16]uint8   // V0-VF registers
 	memory       [4096]uint8 // 4kb of memory
 	index        uint16      // index register
@@ -51,8 +40,25 @@ type chip8 struct {
 	Video [2048]uint32 // Display buffer
 }
 
-func NewChip8() *chip8 {
-	return &chip8{
+func (c *Chip8) Reset() {
+	c.register = [16]uint8{}
+	c.memory = [4096]uint8{}
+	c.index = 0
+	c.pc = 0
+	c.stack = [16]uint16{}
+	c.sp = 0
+	c.delayTimer = 0
+	c.soundTimer = 0
+	c.keypad = [16]uint8{}
+	c.opcode = 0
+	c.instructions = NewInstructions()
+	c.Video = [2048]uint32{} //64*32
+	c.drawFlag = false
+
+}
+
+func NewChip8() *Chip8 {
+	return &Chip8{
 		register:     [16]uint8{},
 		memory:       [4096]uint8{},
 		index:        0,
@@ -70,7 +76,7 @@ func NewChip8() *chip8 {
 	}
 }
 
-func (c *chip8) Init() {
+func (c *Chip8) Init() {
 	c.pc = START_ADDRESS
 
 	for i, v := range fontset {
@@ -80,34 +86,34 @@ func (c *chip8) Init() {
 	c.instructions.cls(c)
 }
 
-func (c *chip8) LoadRom(rom []byte) {
+func (c *Chip8) LoadRom(rom []byte) {
 	for i, v := range rom {
 		c.memory[START_ADDRESS+i] = v
 	}
 }
 
-func (c *chip8) incrementCounter() {
+func (c *Chip8) incrementCounter() {
 	c.pc += 2
 }
 
-func (c *chip8) Cycle() {
+func (c *Chip8) Cycle() {
 	opcode := c.fetchOpcode()
 	c.incrementCounter()
 	c.decodeExecute(opcode)
 }
 
-func (c *chip8) OnKeyEvent(key uint8, press uint8) {
+func (c *Chip8) OnKeyEvent(key uint8, press uint8) {
 	c.keypad[key] = press
 }
 
-func (c *chip8) DrawFlag() bool {
+func (c *Chip8) DrawFlag() bool {
 	return c.drawFlag
 }
 
-func (c *chip8) SetDrawFlag(v bool) {
+func (c *Chip8) SetDrawFlag(v bool) {
 	c.drawFlag = v
 }
 
-func (c *chip8) GetVideo() [2048]uint32 {
+func (c *Chip8) GetVideo() [2048]uint32 {
 	return c.Video
 }

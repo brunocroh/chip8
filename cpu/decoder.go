@@ -1,10 +1,10 @@
 package cpu
 
-func (c *chip8) fetchOpcode() uint16 {
+func (c *Chip8) fetchOpcode() uint16 {
 	return uint16(c.memory[c.pc])<<8 | uint16(c.memory[c.pc+1])
 }
 
-func (c *chip8) decodeExecute(opcode uint16) {
+func (c *Chip8) decodeExecute(opcode uint16) {
 	nnn := opcode & 0x0FFF
 	kk := uint8(opcode & 0x00FF)
 	x := (opcode & 0x0F00) >> 8
